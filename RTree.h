@@ -12,12 +12,12 @@
 #include <limits>
 #include <iostream>
 
-#define MAXNODES 2 // Valor original del usuario.
-#define MINNODES 1 // Valor original del usuario.
+#define MAXNODES 2
+#define MINNODES 1
 
 using namespace std;
 
-#define ASSERT assert // RTree uses ASSERT( condition )
+#define ASSERT assert
 #define Min min
 #define Max max
 
@@ -35,40 +35,38 @@ struct Rect
         m_max[1] = a_maxY;
     }
 
-    int m_min[2];                      ///< Min dimensions of bounding box
-    int m_max[2];                      ///< Max dimensions of bounding box
+    int m_min[2];
+    int m_max[2];
 };
 
-struct  Node;
+struct Node;
 
 struct Branch
 {
-    Rect m_rect;                                  ///< Bounds
-    Node* m_child;                                ///< Child node
-    vector<pair<int, int>> m_data;                              ///< Data Id (El objeto, un polígono de puntos)
+    Rect m_rect;
+    Node* m_child;
+    vector<pair<int, int>> m_data;
 };
 
 struct Node
 {
-    bool IsInternalNode() { return (m_level > 0); } // Not a leaf, but a internal node
-    bool IsLeaf() { return (m_level == 0); } // A leaf, contains data
+    bool IsInternalNode() { return (m_level > 0); }
+    bool IsLeaf() { return (m_level == 0); }
 
-    int m_count;                                  ///< Count
-    int m_level;                                  ///< Leaf is zero, others positive
-    Branch m_branch[MAXNODES+1];                    ///< Branch
+    int m_count;
+    int m_level;
+    Branch m_branch[MAXNODES+1];
 };
 
-/// A link list of nodes for reinsertion after a delete operation
 struct ListNode
 {
-    ListNode* m_next;                             ///< Next in list
-    Node* m_node;                                 ///< Node
+    ListNode* m_next;
+    Node* m_node;
 };
 
-/// Variables for finding a split partition
 struct PartitionVars
 {
-    enum { NOT_TAKEN = -1 }; // indicates that position
+    enum { NOT_TAKEN = -1 };
 
     int m_partition[MAXNODES + 1];
     int m_total;
@@ -91,22 +89,18 @@ public:
     RTree();
     RTree(const RTree& other);
     virtual ~RTree();
-  vector<vector<pair<int, int>>> mObjs; // Almacena todos los objetos de datos
+    vector<vector<pair<int, int>>> mObjs;
 
     void Insert(const int a_min[2], const int a_max[2], vector<pair<int, int>>& a_dataId);
     void Remove(const int a_min[2], const int a_max[2], const vector<pair<int, int>>& a_dataId);
     void RemoveAll();
 
-    // NUEVA FUNCIÓN: Búsqueda (Algoritmo SEARCH - 3.1)
     bool Search(const Rect& a_rect, vector<vector<pair<int, int>>>& a_results);
-    
-    // NUEVA FUNCIÓN: Retorna los objetos para la visualización
+
     vector<vector<pair<int, int>>> getObjects() const;
 
-    /// Count the data elements in this container.  This is slow as no internal counter is maintained.
     int Count();
 
-    /// get the MBRs;
     bool getMBRs(vector<vector<vector<pair<int, int>>>>& mbrs_n);
     Rect MBR(vector<pair<int, int>> pol);
 
@@ -117,43 +111,41 @@ protected:
     void FreeNode(Node* a_node);
     void InitNode(Node* a_node);
     void InitRect(Rect* a_rect);
-    
-    // Funciones renombradas para coincidir con Guttman (Ver tabla en la respuesta)
-    bool InsertRec(const Branch& a_branch, Node* a_node, Node** a_newNode, int a_level); // Antes: InsertRectRec
+
+    bool InsertRec(const Branch& a_branch, Node* a_node, Node** a_newNode, int a_level);
     bool InsertRect(const Branch& a_branch, Node** a_root, int a_level);
     Rect NodeCover(Node* a_node);
     bool AddBranch(const Branch* a_branch, Node* a_node, Node** a_newNode);
     void DisconnectBranch(Node* a_node, int a_index);
-    int ChooseLeaf(const Rect* a_rect, Node* a_node); // Antes: PickBranch
+    int ChooseLeaf(const Rect* a_rect, Node* a_node);
     Rect CombineRect(const Rect* a_rectA, const Rect* a_rectB);
-    void SplitNode(Node* a_node, const Branch* a_branch, Node** a_newNode); // Mismo nombre en el paper
+    void SplitNode(Node* a_node, const Branch* a_branch, Node** a_newNode);
     float CalcRectArea(Rect* a_rect);
     void GetBranches(Node* a_node, const Branch* a_branch, PartitionVars* a_parVars);
-    void QuadraticSplit(PartitionVars* a_parVars, int a_minFill); // Antes: ChoosePartition
+    void QuadraticSplit(PartitionVars* a_parVars, int a_minFill);
     void LoadNodes(Node* a_nodeA, Node* a_nodeB, PartitionVars* a_parVars);
     void InitParVars(PartitionVars* a_parVars, int a_maxRects, int a_minFill);
-    void PickSeeds(PartitionVars* a_parVars); // Mismo nombre en el paper
+    void PickSeeds(PartitionVars* a_parVars);
     void Classify(int a_index, int a_group, PartitionVars* a_parVars);
     bool RemoveRect(Rect* a_rect, const vector<pair<int, int>>& a_id, Node** a_root);
-    bool DeleteRec(Rect* a_rect, const vector<pair<int, int>>& a_id, Node* a_node, ListNode** a_listNode); // Antes: RemoveRectRec
+    bool DeleteRec(Rect* a_rect, const vector<pair<int, int>>& a_id, Node* a_node, ListNode** a_listNode);
     ListNode* AllocListNode();
     void FreeListNode(ListNode* a_listNode);
-    
-    bool Overlap(const Rect* a_rectA, const Rect* a_rectB) const;
-        bool Overlap2(Rect* a_rectA, Rect* a_rectB) const; // Deja Overlap2 como estaba si solo se usa internamente
 
-        void ReInsert(Node* a_node, ListNode** a_listNode);
-        void RemoveAllRec(Node* a_node);
-        void Reset();
-        void CountRec(Node* a_node, int& a_count);
-    
+    bool Overlap(const Rect* a_rectA, const Rect* a_rectB) const;
+    bool Overlap2(Rect* a_rectA, Rect* a_rectB) const;
+
+    void ReInsert(Node* a_node, ListNode** a_listNode);
+    void RemoveAllRec(Node* a_node);
+    void Reset();
+    void CountRec(Node* a_node, int& a_count);
+
     void CopyRec(Node* current, Node* other);
-    
-    // Función auxiliar para Search (3.1)
+
     void SearchRec(Node* a_node, const Rect& a_rect, vector<vector<pair<int, int>>>& a_results);
 
-    Node* m_root;                                    ///< Root of tree
-    float m_unitSphereVolume;                 ///< Unit sphere constant for required number of dimensions
+    Node* m_root;
+    float m_unitSphereVolume;
 };
 
 #endif
