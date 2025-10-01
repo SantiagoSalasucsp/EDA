@@ -18,13 +18,11 @@ RTree::~RTree()
     Reset();
 }
 
-// Implementación de la función pública para obtener los objetos insertados
 vector<vector<pair<int, int>>> RTree::getObjects() const
 {
     return mObjs;
 }
 
-// Initialize Branch with dataId
 void RTree::Insert(const int a_min[2], const int a_max[2], vector<pair<int, int>>& a_dataId)
 {
     mObjs.push_back(a_dataId);
@@ -42,28 +40,24 @@ void RTree::Insert(const int a_min[2], const int a_max[2], vector<pair<int, int>
     InsertRect(branch, &m_root, 0);
 }
 
-// Algoritmo INSERT (3.2) - Implementación Recursiva
-bool RTree::InsertRec(const Branch& a_branch, Node* a_node, Node** a_newNode, int a_level) // Antes: InsertRectRec
+bool RTree::InsertRec(const Branch& a_branch, Node* a_node, Node** a_newNode, int a_level)
 {
-  //Insertion->Find position for new record
     if (a_node->m_level > a_level)
     {
         Node* otherNode;
 
-        int index = ChooseLeaf(&a_branch.m_rect, a_node);// ChooseLeaf->Choose subtree (Antes: PickBranch)
+        int index = ChooseLeaf(&a_branch.m_rect, a_node);
 
 
-        bool childWasSplit = InsertRec(a_branch, a_node->m_branch[index].m_child, &otherNode, a_level);//ChooseLeaf->Descend until
+        bool childWasSplit = InsertRec(a_branch, a_node->m_branch[index].m_child, &otherNode, a_level);
 
         if (!childWasSplit)
         {
-    //Adjust Tree if no split
             a_node->m_branch[index].m_rect = CombineRect(&a_branch.m_rect, &(a_node->m_branch[index].m_rect));
             return false;
         }
         else
         {
-    //Adjust Tree if split was performed
             a_node->m_branch[index].m_rect = NodeCover(a_node->m_branch[index].m_child);
             Branch branch;
             branch.m_child = otherNode;
@@ -86,23 +80,19 @@ bool RTree::InsertRect(const Branch& a_branch, Node** a_root, int a_level)
 {
     Node* newNode;
 
-    if (InsertRec(a_branch, *a_root, &newNode, a_level)) // Antes: InsertRectRec
+    if (InsertRec(a_branch, *a_root, &newNode, a_level))
     {
-    //Adjust Tree
         Node* newRoot = AllocNode();
         newRoot->m_level = (*a_root)->m_level + 1;
 
         Branch branch;
 
-    //Adjust coverings
         branch.m_rect = NodeCover(*a_root);
         branch.m_child = *a_root;
-    //Propagate split changes Upwards if needed
         AddBranch(&branch, newRoot, NULL);
 
         branch.m_rect = NodeCover(newNode);
         branch.m_child = newNode;
-    //Propagate split changes Upwards if needed
         AddBranch(&branch, newRoot, NULL);
 
         *a_root = newRoot;
@@ -183,7 +173,7 @@ void RTree::CopyRec(Node* current, Node* other)
             CopyRec(currentBranch->m_child, otherBranch->m_child);
         }
     }
-    else // A leaf node
+    else
     {
         for (int index = 0; index < current->m_count; ++index)
         {
@@ -293,10 +283,8 @@ Rect RTree::NodeCover(Node* a_node)
 
 bool RTree::AddBranch(const Branch* a_branch, Node* a_node, Node** a_newNode)
 {
-  //Insert->Add record to leaf node
-    if (a_node->m_count < MAXNODES)  // Split won't be necessary
+    if (a_node->m_count < MAXNODES)
     {
-    //if has room
         a_node->m_branch[a_node->m_count] = *a_branch;
         ++a_node->m_count;
 
@@ -304,7 +292,6 @@ bool RTree::AddBranch(const Branch* a_branch, Node* a_node, Node** a_newNode)
     }
     else
     {
-    //if no room
         SplitNode(a_node, a_branch, a_newNode);
         return true;
     }
@@ -317,7 +304,6 @@ void RTree::DisconnectBranch(Node* a_node, int a_index)
     --a_node->m_count;
 }
 
-// Algoritmo CHOOSELEAF (3.2) - Antes: PickBranch
 int RTree::ChooseLeaf(const Rect* a_rect, Node* a_node)
 {
 
@@ -332,7 +318,7 @@ int RTree::ChooseLeaf(const Rect* a_rect, Node* a_node)
     for (int index = 0; index < a_node->m_count; ++index)
     {
         Rect* curRect = &a_node->m_branch[index].m_rect;
-   
+
         area = CalcRectArea(curRect);
         tempRect = CombineRect(a_rect, curRect);
         increase = CalcRectArea(&tempRect) - area;
@@ -344,7 +330,7 @@ int RTree::ChooseLeaf(const Rect* a_rect, Node* a_node)
             firstTime = false;
         }
         else if ((increase == bestIncr) && (area < bestArea))
-        {// on tie
+        {
             best = index;
             bestArea = area;
             bestIncr = increase;
@@ -353,7 +339,7 @@ int RTree::ChooseLeaf(const Rect* a_rect, Node* a_node)
     return best;
 }
 
-Rect RTree::CombineRect(const Rect* a_rectA, const Rect* a_rectB) //Calcula los rangos en que esta
+Rect RTree::CombineRect(const Rect* a_rectA, const Rect* a_rectB)
 {
 
     Rect newRect;
@@ -367,16 +353,14 @@ Rect RTree::CombineRect(const Rect* a_rectA, const Rect* a_rectB) //Calcula los 
     return newRect;
 }
 
-// Algoritmo SPLITNODE (3.3) - Antes: SplitNode (mismo nombre)
 void RTree::SplitNode(Node* a_node, const Branch* a_branch, Node** a_newNode)
 {
-  //Split node
     PartitionVars localVars;
     PartitionVars* parVars = &localVars;
 
     GetBranches(a_node, a_branch, parVars);
 
-    QuadraticSplit(parVars, MINNODES); // Antes: ChoosePartition
+    QuadraticSplit(parVars, MINNODES);
 
     *a_newNode = AllocNode();
     (*a_newNode)->m_level = a_node->m_level;
@@ -414,10 +398,8 @@ void RTree::GetBranches(Node* a_node, const Branch* a_branch, PartitionVars* a_p
 }
 
 
-// Algoritmo QUADRATICSPLIT (3.3) - Antes: ChoosePartition
 void RTree::QuadraticSplit(PartitionVars* a_parVars, int a_minFill)
 {
-//Quatratic Split ?
     float biggestDiff;
     int group, chosen = 0, betterGroup = 0;
 
@@ -430,7 +412,7 @@ void RTree::QuadraticSplit(PartitionVars* a_parVars, int a_minFill)
     {
         biggestDiff = (float)-1;
         for (int index = 0; index<a_parVars->m_total; ++index)
-        {//PickNext
+        {
             if (PartitionVars::NOT_TAKEN == a_parVars->m_partition[index])
             {
                 Rect* curRect = &a_parVars->m_branchBuf[index].m_rect;
@@ -496,7 +478,6 @@ void RTree::LoadNodes(Node* a_nodeA, Node* a_nodeB, PartitionVars* a_parVars)
         int targetNodeIndex = a_parVars->m_partition[index];
         Node* targetNodes[] = { a_nodeA, a_nodeB };
 
-        // It is assured that AddBranch here will not cause a node split.
         bool nodeWasSplit = AddBranch(&a_parVars->m_branchBuf[index], targetNodes[targetNodeIndex], NULL);
     }
 }
@@ -514,7 +495,6 @@ void RTree::InitParVars(PartitionVars* a_parVars, int a_maxRects, int a_minFill)
 }
 
 
-// Algoritmo PICKSEEDS (3.3) - Antes: PickSeeds (mismo nombre)
 void RTree::PickSeeds(PartitionVars* a_parVars)
 {
     int seed0 = 0, seed1 = 0;
@@ -569,7 +549,7 @@ bool RTree::RemoveRect(Rect* a_rect, const vector<pair<int, int>>& a_id, Node** 
 {
     ListNode* reInsertList = NULL;
 
-    if (!DeleteRec(a_rect, a_id, *a_root, &reInsertList)) // Antes: RemoveRectRec
+    if (!DeleteRec(a_rect, a_id, *a_root, &reInsertList))
     {
         while (reInsertList)
         {
@@ -604,7 +584,6 @@ bool RTree::RemoveRect(Rect* a_rect, const vector<pair<int, int>>& a_id, Node** 
     }
 }
 
-// Algoritmo DELETE (3.4) - Implementación Recursiva (Antes: RemoveRectRec)
 bool RTree::DeleteRec(Rect* a_rect, const vector<pair<int, int>>& a_id, Node* a_node, ListNode** a_listNode)
 {
 
@@ -614,17 +593,17 @@ bool RTree::DeleteRec(Rect* a_rect, const vector<pair<int, int>>& a_id, Node* a_
         {
             if (Overlap(a_rect, &(a_node->m_branch[index].m_rect)))
             {
-                if (!DeleteRec(a_rect, a_id, a_node->m_branch[index].m_child, a_listNode)) // Antes: RemoveRectRec
+                if (!DeleteRec(a_rect, a_id, a_node->m_branch[index].m_child, a_listNode))
                 {
                     if (a_node->m_branch[index].m_child->m_count >= MINNODES)
                     {
-                        
+
                         a_node->m_branch[index].m_rect = NodeCover(a_node->m_branch[index].m_child);
                     }
                     else
                     {
-                        
-                        ReInsert(a_node->m_branch[index].m_child, a_listNode); // Algoritmo ReInsert (3.4)
+
+                        ReInsert(a_node->m_branch[index].m_child, a_listNode);
                         DisconnectBranch(a_node, index);
                     }
                     return false;
@@ -639,7 +618,6 @@ bool RTree::DeleteRec(Rect* a_rect, const vector<pair<int, int>>& a_id, Node* a_
         {
             if (a_node->m_branch[index].m_data == a_id)
             {
-                // Remove the record from the object list as well
                 for(auto it = mObjs.begin(); it != mObjs.end(); ++it) {
                     if (*it == a_id) {
                         mObjs.erase(it);
@@ -681,7 +659,6 @@ bool RTree::Overlap2(Rect* a_rectA, Rect* a_rectB) const
     }
 }
 
-// Algoritmo ReInsert (3.4) - Antes: ReInsert (mismo nombre)
 void RTree::ReInsert(Node* a_node, ListNode** a_listNode)
 {
     ListNode* newListNode;
@@ -693,7 +670,6 @@ void RTree::ReInsert(Node* a_node, ListNode** a_listNode)
 }
 
 
-// Algoritmo SEARCH (3.1) - Implementación Pública
 bool RTree::Search(const Rect& a_rect, vector<vector<pair<int, int>>>& a_results)
 {
     a_results.clear();
@@ -702,29 +678,23 @@ bool RTree::Search(const Rect& a_rect, vector<vector<pair<int, int>>>& a_results
 }
 
 
-// Algoritmo SEARCH (3.1) - Implementación Recursiva
 void RTree::SearchRec(Node* a_node, const Rect& a_rect, vector<vector<pair<int, int>>>& a_results)
 {
-    // a_rect es const Rect&. &a_rect es un const Rect*.
 
     if (a_node->IsInternalNode())
     {
         for (int index = 0; index < a_node->m_count; ++index)
         {
-            // La llamada ahora es válida:
-            // &a_node->m_branch[index].m_rect es Rect* (convertible a const Rect*)
-            // &a_rect es const Rect*
             if (Overlap(&a_node->m_branch[index].m_rect, &a_rect))
             {
                 SearchRec(a_node->m_branch[index].m_child, a_rect, a_results);
             }
         }
     }
-    else // IsLeaf()
+    else
     {
         for (int index = 0; index < a_node->m_count; ++index)
         {
-            // La llamada ahora es válida:
             if (Overlap(&a_node->m_branch[index].m_rect, &a_rect))
             {
                 a_results.push_back(a_node->m_branch[index].m_data);
@@ -734,50 +704,40 @@ void RTree::SearchRec(Node* a_node, const Rect& a_rect, vector<vector<pair<int, 
 }
 
 
-// RTree.cpp (Función getMBRs, sustituye la lógica del ciclo while)
-
 bool RTree::getMBRs(vector<vector<vector<pair<int, int>>>>& mbrs_n)
 {
     vector<Branch> current_level_branches, next_level_branches;
     mbrs_n.clear();
     vector<vector<pair<int, int>>> current_mbrs;
 
-    if (m_root->m_count == 0) return true; // Árbol vacío
+    if (m_root->m_count == 0) return true;
 
-    // 1. Inicializar con las ramas de la raíz
     for (int i = 0; i < m_root->m_count; i++) {
         current_level_branches.push_back(m_root->m_branch[i]);
     }
-    
-    // El nivel de la raíz (más alto) es m_root->m_level
+
     int current_level = m_root->m_level;
 
     while (!current_level_branches.empty()) {
         current_mbrs.clear();
         next_level_branches.clear();
 
-        // 2. Procesar el nivel actual (extraer MBRs y preparar el siguiente nivel)
         for (unsigned int i = 0; i < current_level_branches.size(); i++) {
             Branch& b = current_level_branches[i];
 
-            // A. Extraer MBR
             vector<pair<int, int>> q;
             pair<int, int> p;
 
-            // MBR: min point (p.first=min_x, p.second=min_y)
             p.first = b.m_rect.m_min[0];
             p.second = b.m_rect.m_min[1];
             q.push_back(p);
-            
-            // MBR: max point
+
             p.first = b.m_rect.m_max[0];
             p.second = b.m_rect.m_max[1];
             q.push_back(p);
             current_mbrs.push_back(q);
 
-            // B. Preparar el siguiente nivel (si no es un nodo hoja)
             if (current_level > 0 && b.m_child != NULL) {
-                // Asegurarse de que el nivel del hijo coincide (verificación de seguridad)
                 if (b.m_child->m_level == current_level - 1) {
                     for (int j = 0; j < b.m_child->m_count; j++) {
                         next_level_branches.push_back(b.m_child->m_branch[j]);
@@ -785,11 +745,9 @@ bool RTree::getMBRs(vector<vector<vector<pair<int, int>>>>& mbrs_n)
                 }
             }
         }
-        
-        // 3. Almacenar los MBRs del nivel
+
         mbrs_n.push_back(current_mbrs);
 
-        // 4. Mover al siguiente nivel
         current_level_branches = next_level_branches;
         current_level--;
     }
